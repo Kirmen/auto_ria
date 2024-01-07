@@ -31,21 +31,21 @@ def main(hrefs: List, headers: Dict):
 
     a = 0
 
-    for u in hrefs:
+    for url in hrefs:
 
-        cursor.execute('SELECT url FROM cars WHERE url = ?', (u,))
+        cursor.execute('SELECT url FROM cars WHERE url = ?', (url,))
         if cursor.fetchone():
             continue
 
-        req = requests.get(url=u, headers=headers)
+        req = requests.get(url=url, headers=headers)
         soup = BeautifulSoup(req.content, "lxml")
 
         photo_gal = soup.find('div', class_='preview-gallery').find_all('source')
         all_photo = []
-        for p in photo_gal:
-            photo_s = p.get('srcset')
-            photo_f = re.sub(r'(\d+)s', r'\1f', photo_s)
-            all_photo.append(photo_f)
+        for photo in photo_gal:
+            photo_small = photo.get('srcset')
+            photo_full = re.sub(r'(\d+)s', r'\1f', photo_small)
+            all_photo.append(photo_full)
 
         brand = 'Toyota'
 
@@ -57,14 +57,14 @@ def main(hrefs: List, headers: Dict):
         except AttributeError:
             pass
 
-        auto_ria_url = u
+        auto_ria_url = url
 
-        match = re.search(r'(\d+).html', u)
+        match = re.search(r'(\d+).html', url)
         car_id = match.group(1)
         print(car_id)
 
-        # message = f"Марка: {brand}\nЦіна: {price}\nПосилання: {auto_ria_url}\nПосилання на аукціон: {auction_url}"
-        # send_message_with_photos(message, all_photo)
+        message = f"Марка: {brand}\nЦіна: {price}\nПосилання: {auto_ria_url}\nПосилання на аукціон: {auction_url}"
+        send_message_with_photos(message, all_photo)
         put_in_db(auto_ria_url, all_photo, brand, price, auction_url, car_id)
 
         a += 1
