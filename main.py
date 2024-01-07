@@ -5,91 +5,10 @@ from typing import Dict, List
 
 import requests
 from bs4 import BeautifulSoup
-from telegram import Bot
 
-import bot_data
-
-
-def connect_to_db():
-    conn = sqlite3.connect('auto_info.db')
-    cursor = conn.cursor()
-
-    cursor.execute('''
-    CREATE TABLE IF NOT EXISTS cars (
-        id INTEGER PRIMARY KEY,
-        url TEXT,
-        photos TEXT,
-        brand TEXT,
-        price TEXT,
-        auction_link TEXT,
-        car_id TEXT
-    )
-    ''')
-
-
-def put_in_db(auto_ria_url, all_photo, brand, price, auction_url, car_id):
-    conn = sqlite3.connect('auto_info.db')
-    cursor = conn.cursor()
-    cursor.execute('''
-        INSERT INTO cars (url, photos, brand, price, auction_link, car_id)
-        VALUES (?, ?, ?, ?, ?, ?)
-        ''', (auto_ria_url, ','.join(all_photo), brand, price, auction_url, car_id))
-
-    conn.commit()
-
-    conn.close()
-
-
-def send_message(message):
-    token = bot_data.TOKEN
-    chat_id = bot_data.CHAT_ID
-    bot = Bot(token=token)
-    bot.send_message(chat_id=chat_id, text=message)
-
-
-def send_message_with_photos(message, photos):
-    token = bot_data.TOKEN
-    chat_id = bot_data.CHAT_ID
-    bot = Bot(token=token)
-
-    bot.send_message(chat_id=chat_id, text=message)
-
-    # for photo in photos:
-    #     with open(photo, 'rb') as f:
-    #         bot.send_photo(chat_id=CHAT_ID, photo=f)
-
-
-def check_price_changes(headers):
-    conn = sqlite3.connect('auto_info.db')
-    cursor = conn.cursor()
-
-    cursor.execute('SELECT url, price FROM cars')
-    results = cursor.fetchall()
-
-    for url, current_price in results:
-        req = requests.get(url=url, headers=headers)
-        soup = BeautifulSoup(req.content, "lxml")
-        new_price = soup.find('div', class_='price_value').find('strong').get_text(strip=True)
-
-        if new_price != current_price:
-            # send_message(f"Ціна на автомобіль {url} змінилася на {new_price}!")
-
-            cursor.execute('UPDATE cars SET price = ? WHERE url = ?', (new_price, url))
-            conn.commit()
-    conn.close()
-
-
-def check_sold_cars(hrefs):
-    conn = sqlite3.connect('auto_info.db')
-    cursor = conn.cursor()
-
-    for u in hrefs:
-        cursor.execute('SELECT url FROM cars WHERE url = ?', (u,))
-        if not cursor.fetchone():
-            # send_message(f"Автомобіль {u} був проданий!")
-            pass
-
-    conn.close()
+from checkers import check_price_changes, check_sold_cars
+from db_tools import connect_to_db, put_in_db
+from tg_tools import send_message_with_photos
 
 
 def get_all_hrefs(headers: Dict) -> List:
@@ -106,13 +25,15 @@ def get_all_hrefs(headers: Dict) -> List:
     return all_hrefs
 
 
-def get_info_and_put_in_db(hrefs, headers):
+def main(hrefs: List, headers: Dict):
     conn = sqlite3.connect('auto_info.db')
     cursor = conn.cursor()
+
     a = 0
+
     for u in hrefs:
-        print(a)
-        print(u)
+        check_price_changes(headers, u)
+
         cursor.execute('SELECT url FROM cars WHERE url = ?', (u,))
         if cursor.fetchone():
             continue
@@ -152,7 +73,7 @@ def get_info_and_put_in_db(hrefs, headers):
             break
 
 
-def main():
+def run():
     connect_to_db()
 
     while True:
@@ -163,12 +84,11 @@ def main():
         }
         urls = get_all_hrefs(headers1)
 
-        get_info_and_put_in_db(urls, headers1)
-        check_price_changes(headers1)
+        main(urls, headers1)
         check_sold_cars(urls)
         break
 
         # time.sleep(600)
 
 
-main()
+run()
