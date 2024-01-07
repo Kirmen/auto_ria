@@ -7,8 +7,10 @@ from PIL import Image
 
 def download_and_convert_photos(photos: List[str]) -> List[str]:
     converted_photos_paths = []
-
+    c = 0
     for photo_url in photos:
+        if c == 3:
+            break
 
         response = requests.get(photo_url)
         if response.status_code != 200:
@@ -25,5 +27,6 @@ def download_and_convert_photos(photos: List[str]) -> List[str]:
         converted_photos_paths.append(converted_filename)
 
         os.remove(local_filename)
+        c += 1
 
     return converted_photos_paths
