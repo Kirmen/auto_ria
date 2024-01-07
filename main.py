@@ -32,7 +32,6 @@ def main(hrefs: List, headers: Dict):
     a = 0
 
     for u in hrefs:
-        check_price_changes(headers, u)
 
         cursor.execute('SELECT url FROM cars WHERE url = ?', (u,))
         if cursor.fetchone():
@@ -86,6 +85,7 @@ def run():
 
         main(urls, headers1)
         check_sold_cars(urls)
+        check_price_changes(headers1, urls)
         break
 
         # time.sleep(600)

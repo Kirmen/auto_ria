@@ -26,4 +26,4 @@ def send_message_with_photos(message: str, photos: List[str]):
         with open(photo, 'rb') as f:
             bot.send_photo(chat_id=chat_id, photo=f)
 
-        os.remove(photo)
+        # os.remove(photo)

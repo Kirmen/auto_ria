@@ -24,6 +24,6 @@ def download_and_convert_photos(photos: List[str]) -> List[str]:
         image.convert("RGB").save(converted_filename, "JPEG")
         converted_photos_paths.append(converted_filename)
 
-        os.remove(local_filename)
+        # os.remove(local_filename)
 
     return converted_photos_paths

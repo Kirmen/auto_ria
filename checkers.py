@@ -7,7 +7,7 @@ from bs4 import BeautifulSoup
 from tg_tools import send_message
 
 
-def check_price_changes(headers: Dict, href: str):
+def check_price_changes(headers: Dict, hrefs: List[str]):
     conn = sqlite3.connect('auto_info.db')
     cursor = conn.cursor()
 
@@ -15,15 +15,17 @@ def check_price_changes(headers: Dict, href: str):
     results = cursor.fetchall()
 
     for url, current_price in results:
-        req = requests.get(url=href, headers=headers)
-        soup = BeautifulSoup(req.content, "lxml")
-        new_price = soup.find('div', class_='price_value').find('strong').get_text(strip=True)
+        for u in hrefs:
+            if u == url:
+                req = requests.get(url=u, headers=headers)
+                soup = BeautifulSoup(req.content, "lxml")
+                new_price = soup.find('div', class_='price_value').find('strong').get_text(strip=True)
 
-        if new_price != current_price:
-            # send_message(f"Ціна на автомобіль {url} змінилася на {new_price}!")
+                if new_price != current_price:
+                    # send_message(f"Ціна на автомобіль {url} змінилася на {new_price}!")
 
-            cursor.execute('UPDATE cars SET price = ? WHERE url = ?', (new_price, url))
-            conn.commit()
+                    cursor.execute('UPDATE cars SET price = ? WHERE url = ?', (new_price, url))
+                    conn.commit()
     conn.close()
 
 
