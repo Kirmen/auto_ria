@@ -6,11 +6,10 @@ import requests
 
 from photo_handlers import download_and_convert_photos
 
-TELEGRAM_API_URL = "https://api.telegram.org/bot"
-
 config = configparser.ConfigParser()
 config.read('bot_data.config')
 
+TELEGRAM_API_URL = config.get('DEFAULT', 'TELEGRAM_API_URL')
 TOKEN = config.get('DEFAULT', 'TOKEN')
 CHAT_ID = config.get('DEFAULT', 'CHAT_ID')
 
